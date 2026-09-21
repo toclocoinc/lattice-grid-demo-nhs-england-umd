@@ -419,13 +419,7 @@
       },
     }));
     built.trustGrid = trustGrid;
-    /*
-     * The sort is set through `grid.sort`, not declared in the configuration.
-     * `createGrid({ sort: [...] })` is accepted without a word and does
-     * nothing: the table then shows whatever order the rows arrived in, which
-     * for a table sorted by the busiest department is a coincidence waiting to
-     * stop being true.
-     */
+    /* Busiest department first, through `grid.sort`. */
     trustGrid.sort.set([{ col: 'at', dir: 'desc' }]);
 
     const perfGrid = hiddenGrid(createGrid, 'Months, for the four-hour chart', observationColumns());
@@ -531,12 +525,11 @@
      * PERCENTAGE POINTS, because "the four-hour figure fell 5 per cent" is a
      * sentence about a number rather than about a hospital.
      *
-     * None of them uses the panel's own movement line, which is the one thing
-     * on this page that was left on the table deliberately. That line colours a
-     * rise green and a fall red, and there is no way to tell it otherwise; on
-     * five of these six figures that reading is wrong or meaningless. A waiting
-     * list of seven million falling by a hundred and seventy thousand people is
-     * the best news on the page, and it would have been drawn in red.
+     * The movement is written in words rather than drawn as a rise or a fall,
+     * because on these six figures a rise is not a good thing or a bad one and
+     * the page should not imply that it is. More people in A&E, more emergency
+     * admissions, a longer waiting list: each is a fact about the month, and
+     * what it means is the reader's to decide.
      *
      * @returns {void}
      */
@@ -773,13 +766,8 @@
         scheme: 'colourblind',
         tooltip: true,
         selection: true,
-        /*
-         * No axis titles on this one. A horizontal bar draws its categories up
-         * the left and its measure along the bottom, but it places
-         * `axis.y.title` on the left and `axis.x.title` underneath exactly as a
-         * vertical bar does, so each title ends up naming the axis it is not
-         * about. The unit is in the subtitle instead, where it is right.
-         */
+        /* The unit is in the subtitle, above the plot, where a row of trust
+           names reads it before it reads the bars. */
         footnote: 'Ranked among the busiest departments only, because a trust with two thousand '
           + 'attendances and one with eighty thousand are not the same question.',
       });

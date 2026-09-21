@@ -277,12 +277,11 @@ try {
     check(consoleErrors.length === 0, `${label}: no console errors`, consoleErrors.slice(0, 3).join(' | '));
     check(pageErrors.length === 0, `${label}: no page errors`, pageErrors.slice(0, 3).join(' | '));
     /*
-     * The grid's own diagnostics, which say when a configuration key had no
-     * effect, a column was read that is not projected, or a value could not be
-     * formatted. They are warnings rather than errors, so nothing stops; a page
-     * that ignores them is a page quietly not doing what its code says. One
-     * `sort:` in a config that the grid does not take cost this demo three
-     * unsorted tables before anyone read the console.
+     * The grid's own diagnostics: it says when a configuration key had no
+     * effect, when a column was read that is not projected, and when a value
+     * could not be formatted. They are warnings rather than errors, so nothing
+     * stops, and a page that ignores them is a page quietly not doing what its
+     * code says. There should be none.
      */
     const lattice = consoleWarnings.filter((line) => line.includes('[lattice]'));
     check(lattice.length === 0, `${label}: the grid logged no diagnostics`, lattice.slice(0, 3).join(' | '));

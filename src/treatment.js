@@ -143,9 +143,7 @@
       ],
     });
 
-    /* Longest queue first. Set through `grid.sort` rather than declared in the
-       configuration: `createGrid({ sort: [...] })` is accepted without a word
-       and does nothing. */
+    /* Longest queue first, through `grid.sort`. */
     grid.sort.set([{ col: 'tot', dir: 'desc' }]);
 
     router.attach(grid, 'function', { label: 'treatment functions' });
@@ -176,8 +174,8 @@
           + `The standard is ${EIGHTEEN_WEEK_STANDARD} per cent of a list waiting under 18 weeks. `
           + 'The tab follows the first trust ticked in the table above.'
         : `${nameOf(code)} has no treatment-function breakdown in ${month}. `
-          + 'The tab follows the first trust ticked in the table above; England itself is not broken '
-          + 'down by specialty here, so tick a trust.';
+          + 'The tab follows the first trust ticked in the table above; England itself has no '
+          + 'specialty breakdown here, so tick a trust.';
       draw();
     }
 
@@ -209,10 +207,8 @@
         legend: false,
         scheme: 'colourblind',
         tooltip: true,
-        /* No axis titles: a horizontal bar places `axis.y.title` on the left,
-           where its categories are, and `axis.x.title` underneath, where its
-           measure is, so each would name the axis it is not about. The subtitle
-           carries the unit instead. */
+        /* The unit is in the subtitle, above the plot, where a column of
+           specialty names reads it before it reads the bars. */
         footnote: `The ${CHARTED} largest specialties. The table beside it holds every one.`,
       });
     }
