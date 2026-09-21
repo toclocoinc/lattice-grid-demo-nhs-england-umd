@@ -199,13 +199,13 @@
           tooltip: (p) => String((p.data && (p.data.published || p.data.name)) || p.value || ''),
         },
         filter: plain,
-        layout: fixedLayout({ width: 190, pin: 'start' }),
+        layout: fixedLayout({ width: 165, pin: 'start' }),
       },
       {
         id: 'region',
         field: 'region',
         title: 'Region',
-        header: { render: twoLineHeading('Region', 'NHS England region') },
+        header: { render: twoLineHeading('Region', 'NHS region') },
         filter: plain,
         layout: fixedLayout({ width: 130 }),
       },
@@ -217,26 +217,26 @@
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
-        layout: fixedLayout({ width: 130 }),
+        layout: fixedLayout({ width: 135 }),
       },
       {
         id: 'perf',
         field: 'perf',
         title: `Seen within four hours, ${ae}`,
-        header: { render: twoLineHeading('Four hours', '% seen within 4 hrs') },
+        header: { render: twoLineHeading('Four hours', '% within 4 hrs') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 1, suffix: '%' },
         /* The bar runs the whole scale a percentage has, so a trust at 60 per
            cent and a trust at 95 are drawn against the same thing. */
         cell: percentBar,
-        layout: fixedLayout({ width: 140 }),
+        layout: fixedLayout({ width: 145 }),
       },
       {
         id: 'w12',
         field: 'w12',
         title: `Waited 12 hours or more from the decision to admit, ${ae}`,
-        header: { render: twoLineHeading('Waited 12 hrs+', 'patients') },
+        header: { render: twoLineHeading('12 hours+', 'patients') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
@@ -256,13 +256,13 @@
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
-        layout: fixedLayout({ width: 140 }),
+        layout: fixedLayout({ width: 145 }),
       },
       {
         id: 'pct18',
         field: 'pct18',
         title: `Waiting under 18 weeks, ${rtt}`,
-        header: { render: twoLineHeading('Under 18 weeks', '% of the list') },
+        header: { render: twoLineHeading('Under 18 wks', '% of the list') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 1, suffix: '%' },
@@ -273,11 +273,11 @@
         id: 'g52',
         field: 'g52',
         title: `Waiting over 52 weeks, ${rtt}`,
-        header: { render: twoLineHeading('Over 52 weeks', 'people') },
+        header: { render: twoLineHeading('Over 52 wks', 'people') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
-        layout: fixedLayout({ width: 130 }),
+        layout: fixedLayout({ width: 140 }),
       },
     ];
   }
@@ -913,8 +913,8 @@
       typeButton.classList.toggle('on', only);
       trustGrid.filters.where('type1', only ? (row) => row.type1 : null);
       const columnsNote = ' Names are shortened, with the org code under each and the published name on the '
-        + 'cell. "Waited 12 hours+" counts patients who waited twelve hours or more from the decision to '
-        + 'admit them; "Under 18 weeks" and "Over 52 weeks" are that trust\u2019s own waiting list.';
+        + 'cell. "12 hours+" counts patients who waited twelve hours or more from the decision to '
+        + 'admit them; "Under 18 wks" and "Over 52 wks" are that trust\u2019s own waiting list, in weeks waited.';
       trustCaption.textContent = (only
         ? `${counted(meta.counts.type1)} trusts with a Type 1 A&E department: consultant-led, open around the `
           + 'clock. Every other provider in the two collections, including the ones that hold a waiting '
