@@ -171,15 +171,35 @@
   function trustColumns(meta) {
     const ae = monthLabel(meta.ae.last);
     const rtt = monthLabel(meta.rtt.last);
+    /* The month, abbreviated, for a unit line that has to sit under a heading
+       rather than beside it. */
+    const shortAe = `${ae.slice(0, 3)} ${ae.slice(-4)}`;
+    const shortRtt = `${rtt.slice(0, 3)} ${rtt.slice(-4)}`;
     const plain = { enabled: false };
+    /*
+     * The bars run at the small size. A bar drawn beside a figure is a reading
+     * aid, not the reading: at the default size the two of them together need
+     * more width than eight columns of this table have between them, and a
+     * table that scrolls sideways to reach its last two columns has hidden
+     * them.
+     */
+    const percentBar = {
+      decoration: { type: 'bar', size: 'sm', min: 0, max: 100, origin: 0 },
+    };
     return [
       {
         id: 'name',
         field: 'name',
         title: 'Trust',
-        cell: { render: 'twoline', props: { secondary: 'c' } },
+        cell: {
+          render: 'twoline',
+          props: { secondary: 'c' },
+          /* The name as NHS England publishes it, for a reader who wants to
+             be certain which trust a shortened name is. */
+          tooltip: (p) => String((p.data && (p.data.published || p.data.name)) || p.value || ''),
+        },
         filter: plain,
-        layout: fixedLayout({ width: 235, pin: 'start' }),
+        layout: fixedLayout({ width: 190, pin: 'start' }),
       },
       {
         id: 'region',
@@ -187,13 +207,13 @@
         title: 'Region',
         header: { render: twoLineHeading('Region', 'NHS England region') },
         filter: plain,
-        layout: fixedLayout({ width: 140 }),
+        layout: fixedLayout({ width: 130 }),
       },
       {
         id: 'at',
         field: 'at',
         title: `A&E attendances, ${ae}`,
-        header: { render: twoLineHeading('A&E attendances', `attendances, ${ae}`) },
+        header: { render: twoLineHeading('Attendances', `A&E, ${shortAe}`) },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
@@ -203,55 +223,61 @@
         id: 'perf',
         field: 'perf',
         title: `Seen within four hours, ${ae}`,
-        header: { render: twoLineHeading('Seen within four hours', `per cent of attendances, ${ae}`) },
+        header: { render: twoLineHeading('Four hours', '% seen within 4 hrs') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 1, suffix: '%' },
         /* The bar runs the whole scale a percentage has, so a trust at 60 per
            cent and a trust at 95 are drawn against the same thing. */
-        cell: { decoration: { type: 'bar', min: 0, max: 100, origin: 0 } },
-        layout: fixedLayout({ width: 160 }),
+        cell: percentBar,
+        layout: fixedLayout({ width: 140 }),
       },
       {
         id: 'w12',
         field: 'w12',
-        title: `Waited 12 hours or more, ${ae}`,
-        header: { render: twoLineHeading('Waited 12 hours or more', 'patients, from the decision to admit') },
+        title: `Waited 12 hours or more from the decision to admit, ${ae}`,
+        header: { render: twoLineHeading('Waited 12 hrs+', 'patients') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
-        layout: fixedLayout({ width: 175 }),
+        /* The heading has room for the count and not for what it counts, so
+           the qualifier that makes it mean anything is on the cell, and said
+           once in full under the table. */
+        cell: {
+          tooltip: `Patients who waited twelve hours or more from the decision to admit them, ${ae}.`,
+        },
+        layout: fixedLayout({ width: 140 }),
       },
       {
         id: 'tot',
         field: 'tot',
         title: `On the waiting list, ${rtt}`,
-        header: { render: twoLineHeading('On the waiting list', `incomplete pathways, ${rtt}`) },
+        header: { render: twoLineHeading('Waiting list', `pathways, ${shortRtt}`) },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
-        layout: fixedLayout({ width: 150 }),
+        layout: fixedLayout({ width: 140 }),
       },
       {
         id: 'pct18',
         field: 'pct18',
         title: `Waiting under 18 weeks, ${rtt}`,
-        header: { render: twoLineHeading('Waiting under 18 weeks', 'per cent of the list') },
+        header: { render: twoLineHeading('Under 18 weeks', '% of the list') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 1, suffix: '%' },
-        cell: { decoration: { type: 'bar', min: 0, max: 100, origin: 0 } },
-        layout: fixedLayout({ width: 165 }),
+        cell: percentBar,
+        layout: fixedLayout({ width: 145 }),
       },
       {
         id: 'g52',
         field: 'g52',
         title: `Waiting over 52 weeks, ${rtt}`,
-        header: { render: twoLineHeading('Waiting over 52 weeks', 'people') },
+        header: { render: twoLineHeading('Over 52 weeks', 'people') },
         type: 'number',
         filter: plain,
         format: { type: 'number', decimals: 0 },
-        layout: fixedLayout({ width: 140 }),
+        layout: fixedLayout({ width: 130 }),
       },
     ];
   }
@@ -886,12 +912,16 @@
       typeButton.setAttribute('aria-pressed', String(only));
       typeButton.classList.toggle('on', only);
       trustGrid.filters.where('type1', only ? (row) => row.type1 : null);
-      trustCaption.textContent = only
+      const columnsNote = ' Names are shortened, with the org code under each and the published name on the '
+        + 'cell. "Waited 12 hours+" counts patients who waited twelve hours or more from the decision to '
+        + 'admit them; "Under 18 weeks" and "Over 52 weeks" are that trust\u2019s own waiting list.';
+      trustCaption.textContent = (only
         ? `${counted(meta.counts.type1)} trusts with a Type 1 A&E department: consultant-led, open around the `
           + 'clock. Every other provider in the two collections, including the ones that hold a waiting '
           + 'list and run no A&E, is hidden.'
         : `All ${counted(meta.counts.trusts)} providers in the two collections, including urgent treatment `
-          + 'centres, minor injury units and the independent hospitals that hold a waiting list and run no A&E.';
+          + 'centres, minor injury units and the independent hospitals that hold a waiting list and run no A&E.')
+        + columnsNote;
       /* The chart reads the grid's filtered rows, so what changed is what it
          draws; it only has to be told to draw again. */
       if (built.rankChart) built.rankChart.draw();

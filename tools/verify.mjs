@@ -68,6 +68,9 @@ const LIBRARY_TAGS = [
 /** The four-hour standard, restated here rather than read off the page. */
 const FOUR_HOUR_STANDARD = 95;
 
+/** How many trusts the ranking chart is supposed to rank. */
+const RANKED_TRUSTS = 15;
+
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -498,8 +501,22 @@ try {
     check(!!head && !!head.sub && head.sub.length > 0,
       `the ${id} heading carries the unit it is counted in`, head ? `${head.main} / ${head.sub}` : 'not found');
   }
-  const monthly = mainGrid.headings.filter((h) => h.sub && /2\d{3}/.test(h.sub)).length;
-  check(monthly >= 3, 'and the ones that are a single month say which month', `${monthly} headings name a month`);
+  /*
+   * The two collections are a month apart -- NHS England publishes the waiting
+   * list a month behind A&E -- so a table of both has to say which figure is
+   * which month, or every comparison on it is a month out and reads as if it
+   * were not.
+   */
+  const shortMonth = (label) => `${label.slice(0, 3)} ${label.slice(-4)}`;
+  const namesAeMonth = mainGrid.headings.filter((h) => h.sub && h.sub.includes(shortMonth(meta.ae.lastLabel)));
+  const namesRttMonth = mainGrid.headings.filter((h) => h.sub && h.sub.includes(shortMonth(meta.rtt.lastLabel)));
+  check(namesAeMonth.length >= 1, `a heading names the A&E month, ${shortMonth(meta.ae.lastLabel)}`,
+    mainGrid.headings.map((h) => h.sub).filter(Boolean).join(' | '));
+  check(namesRttMonth.length >= 1, `and one names the waiting-list month, ${shortMonth(meta.rtt.lastLabel)}`,
+    mainGrid.headings.map((h) => h.sub).filter(Boolean).join(' | '));
+  check(shortMonth(meta.ae.lastLabel) !== shortMonth(meta.rtt.lastLabel),
+    'and they really are two different months, which is why the table has to say so',
+    `${meta.ae.lastLabel} against ${meta.rtt.lastLabel}`);
 
   /* The table is sorted, and sorted by the column it says. This is not the
      order the rows arrived in: the sort is set through `grid.sort`. */
@@ -513,6 +530,73 @@ try {
   const busiest = trusts.filter((t) => t.type1).sort((a2, b2) => b2.at - a2.at)[0];
   check(sorted.first[0] === busiest.at, 'and the top of it is the busiest Type 1 department in the saved copy',
     `${sorted.first[0]}, expected ${busiest.at} (${busiest.name})`);
+
+  /*
+   * Every column on screen at the width the page is read at, with no scrollbar
+   * of the table's own. Eight columns of hospital statistics are eight columns
+   * a reader is meant to compare across; two of them parked behind a
+   * horizontal scrollbar are two nobody finds.
+   */
+  const fits = await evaluate(`(() => {
+    const root = document.querySelector('.primary-host .lattice');
+    const view = root.querySelector('.lat-body-viewport');
+    const right = view.getBoundingClientRect().right;
+    const heads = [...root.querySelectorAll('[role="columnheader"]')];
+    return {
+      viewport: Math.round(view.clientWidth),
+      scrolls: view.scrollWidth > view.clientWidth + 1,
+      scrollWidth: view.scrollWidth,
+      onScreen: heads.filter((c) => c.getBoundingClientRect().right <= right + 1).map((c) => c.getAttribute('data-col')),
+      all: heads.map((c) => c.getAttribute('data-col')),
+      clipped: heads.filter((c) => {
+        const main = c.querySelector('.col-head-main');
+        const sub = c.querySelector('.col-head-sub');
+        return (main && main.scrollWidth > main.clientWidth + 1) || (sub && sub.scrollWidth > sub.clientWidth + 1);
+      }).map((c) => c.getAttribute('data-col')),
+      widths: heads.map((c) => c.getAttribute('data-col') + ':' + Math.round(c.getBoundingClientRect().width)),
+    };
+  })()`);
+  console.log(`  trust table at ${1280}px: viewport ${fits.viewport}px, columns ${fits.widths.join(' ')}`);
+  check(!fits.scrolls, 'the trust table shows every column without a sideways scroll of its own',
+    `${fits.scrollWidth} against a ${fits.viewport}px viewport`);
+  for (const id of ['name', 'region', 'at', 'perf', 'w12', 'tot', 'pct18', 'g52']) {
+    check(fits.onScreen.includes(id), `the ${id} column is on screen without scrolling sideways`,
+      fits.onScreen.join(', '));
+  }
+  check(fits.clipped.length === 0, 'and no heading of it is cut short at this width', fits.clipped.join(', '));
+
+  /*
+   * And it stays that way whichever column the reader sorts by.
+   *
+   * The sorted column keeps its direction arrow on permanently while the rest
+   * show theirs on hover, so sorting takes about twenty pixels out of one
+   * heading's own width. A table sized for the unsorted state has a heading
+   * that ellipsises the moment someone clicks it, which is the one moment they
+   * are looking at it.
+   */
+  const sortStates = await evaluate(`(async () => {
+    const grid = window.__nhsDemo.trustGrid;
+    const root = document.querySelector('.primary-host .lattice');
+    const clippedNow = () => [...root.querySelectorAll('[role="columnheader"]')].filter((c) => {
+      const main = c.querySelector('.col-head-main');
+      const sub = c.querySelector('.col-head-sub');
+      return (main && main.scrollWidth > main.clientWidth + 1) || (sub && sub.scrollWidth > sub.clientWidth + 1);
+    }).map((c) => c.getAttribute('data-col'));
+    const out = [];
+    for (const col of ['name', 'region', 'at', 'perf', 'w12', 'tot', 'pct18', 'g52']) {
+      grid.sort.set([{ col, dir: 'desc' }]);
+      await new Promise((r) => setTimeout(r, 350));
+      out.push({ col, clipped: clippedNow() });
+    }
+    grid.sort.set([{ col: 'at', dir: 'desc' }]);
+    await new Promise((r) => setTimeout(r, 350));
+    return out;
+  })()`);
+  const clippedWhenSorted = sortStates.filter((entry) => entry.clipped.length);
+  console.log(`  sorted by each column in turn: ${sortStates.map((e) => `${e.col}:${e.clipped.length}`).join(' ')}`);
+  check(clippedWhenSorted.length === 0,
+    'and no heading is cut short whichever column the table is sorted by',
+    clippedWhenSorted.map((e) => `sorted by ${e.col} clips ${e.clipped.join('/')}`).join('; '));
 
   const rails = await evaluate(`document.querySelectorAll('.lat-panel-dock').length`);
   const furniture = await evaluate(`(() => ({
@@ -751,6 +835,28 @@ try {
   console.log(`  distribution for ${loaded.focus}: ${drawnBandTotal} drawn, ${bandTotal} saved`);
   check(drawnBandTotal === bandTotal, 'the distribution adds up to that trust’s whole waiting list',
     `${drawnBandTotal}, expected ${bandTotal}`);
+  /* A category label the chart had to cut is a trust nobody can name. */
+  const rankLabels = await evaluate(`(() => {
+    const c = window.__nhsDemo.rankChart;
+    const drawn = [...c.element.querySelectorAll('text')].map((t) => t.textContent);
+    const names = new Set(window.__nhsDemo.trustGrid.rows.data().map((r) => r.name));
+    const categories = c.data().series[0].points.map((p) => String(p.label != null ? p.label : p.x));
+    return {
+      categories,
+      cut: drawn.filter((t) => t.indexOf(String.fromCharCode(0x2026)) >= 0 || t.slice(-3) === '...'),
+      unknown: categories.filter((label) => !names.has(label)),
+      drawnCategories: drawn.filter((t) => categories.includes(t)).length,
+    };
+  })()`);
+  console.log(`  ranking chart labels: ${rankLabels.categories.slice(0, 3).join(' | ')} ... `
+    + `(${rankLabels.drawnCategories} drawn whole, ${rankLabels.cut.length} cut)`);
+  check(rankLabels.cut.length === 0, 'no label on the ranking chart is cut short with an ellipsis',
+    rankLabels.cut.join(' | '));
+  check(rankLabels.unknown.length === 0, 'and every one of them is a name the table shows',
+    rankLabels.unknown.join(' | '));
+  check(rankLabels.drawnCategories === RANKED_TRUSTS,
+    'the chart drew all fifteen of its names in full', `${rankLabels.drawnCategories}`);
+
   const bandOrder = await evaluate(`window.__nhsDemo.bandChart.data().series[0].points.map((p) => String(p.label ?? p.x))`);
   check(bandOrder.join('|') === meta.buckets.map((b2) => b2.label).join('|'),
     'the distribution runs shortest wait to longest, not in whatever order the rows arrived',
@@ -1090,7 +1196,36 @@ try {
   noErrors('the treatment-function tab');
 
   /* =================================================================== */
-  /* 4. On a phone.                                                      */
+  /* 4. Wider than the width it is designed at.                          */
+  /* =================================================================== */
+
+  await evaluate("window.__nhsDemo.tabs.activate('monthly')");
+  await sleep(600);
+  await call('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await sleep(1200);
+  const wide = await evaluate(`(() => {
+    const de = document.documentElement;
+    const root = document.querySelector('.primary-host .lattice');
+    const view = root.querySelector('.lat-body-viewport');
+    return {
+      scrollWidth: de.scrollWidth,
+      clientWidth: de.clientWidth,
+      tableScrolls: view.scrollWidth > view.clientWidth + 1,
+      dataRows: view.querySelectorAll('.lat-row[data-index]').length,
+      charts: document.querySelectorAll('.chart-box svg').length,
+    };
+  })()`);
+  console.log(`  at 1440px: page scrollWidth ${wide.scrollWidth} vs ${wide.clientWidth}, `
+    + `${wide.dataRows} data rows, ${wide.charts} charts, table scrolls sideways: ${wide.tableScrolls}`);
+  check(wide.scrollWidth <= wide.clientWidth, 'at 1440px: the page does not scroll sideways',
+    `${wide.scrollWidth} > ${wide.clientWidth}`);
+  check(!wide.tableScrolls, 'at 1440px: the trust table still shows every column without scrolling');
+  check(wide.dataRows > 0 && wide.charts >= 4, 'at 1440px: the table and all four charts are still drawn',
+    `${wide.dataRows} rows, ${wide.charts} charts`);
+  await shoot('05-dashboard-1440');
+
+  /* =================================================================== */
+  /* 5. On a phone.                                                      */
   /* =================================================================== */
 
   await call('Emulation.setDeviceMetricsOverride', { width: 400, height: 900, deviceScaleFactor: 1, mobile: true });

@@ -265,6 +265,52 @@
   }
 
   /**
+   * The words every trust's name has in common, which is to say the words that
+   * do not say which trust it is.
+   *
+   * "University Hospitals of Derby and Burton" is a name; "Derby and Burton"
+   * is which one. The full published name is 51 characters at its longest and
+   * the room a chart has for a category label is capped at two fifths of its
+   * width, so the difference between shortening here and not is the difference
+   * between a row of names and a row of "Barking, Havering and Redbridge U...".
+   * The org code sits under the name in the table and the full published name
+   * is on the cell, so nothing is lost, only unsaid.
+   */
+  const COMMON_WORDS = [
+    /\bUniversity Hospitals\b/gi,
+    /\bUniversity Healthcare\b/gi,
+    /\bUniversity Hospital\b/gi,
+    /\bTeaching Hospitals\b/gi,
+    /\bHospitals\b/gi,
+    /\bHospital\b/gi,
+    /\bHealthcare\b/gi,
+    /\bHealth Services\b/gi,
+    /\bHealth\b/gi,
+  ];
+
+  /**
+   * A provider's name with the words every provider shares taken out.
+   *
+   * Falls back to the whole name when what is left is too short to be a name
+   * at all, which is what stops "Royal Free Hospital" becoming "Royal Free"
+   * becoming nothing. Two providers that end up sharing a shortened name are
+   * told apart afterwards, in `prepare`, by their org code.
+   *
+   * @param {string} name the name as this page writes it
+   * @returns {string} the short form
+   */
+  function shortName(name) {
+    let out = String(name || '');
+    for (const word of COMMON_WORDS) out = out.replace(word, ' ');
+    out = out.replace(/\s+/g, ' ')
+      .replace(/^\s*(of|and|the)\s+/i, '')
+      .replace(/\s+(of|and|the)\s*$/i, '')
+      .replace(/\s+,/g, ',')
+      .trim();
+    return out.length >= 3 ? out : String(name || '').trim();
+  }
+
+  /**
    * Turn the saved copy into the rows the router is fed, and the lookups the
    * page reads.
    *
@@ -286,7 +332,10 @@
     const meta = snapshot.meta;
     const months = [...new Set(snapshot.months.map((row) => row.m))].sort();
 
-    const trusts = snapshot.trusts.map((trust) => ({ ...trust, name: prettyName(trust.name) }));
+    const trusts = snapshot.trusts.map((trust) => {
+      const published = prettyName(trust.name);
+      return { ...trust, published, name: shortName(published) };
+    });
     /*
      * Two providers can share a name: there are two Duchy Hospitals in the
      * waiting-list collection, under two org codes. A chart keys its series by
@@ -441,6 +490,7 @@
     mergeLive,
     prepare,
     prettyName,
+    shortName,
     fourHour,
     fourHourType1,
     withinEighteen,
