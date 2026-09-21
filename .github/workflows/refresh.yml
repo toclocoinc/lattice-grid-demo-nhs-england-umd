@@ -1,0 +1,79 @@
+name: Refresh the saved copy
+
+on:
+  schedule:
+    # Nightly. NHS England publishes both collections on a Thursday morning,
+    # so this is simply "every night, a while after anything could have landed".
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Rebuild every month from source rather than topping up'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  # Needed by the last step: a push made with GITHUB_TOKEN never starts another
+  # workflow, so this one has to ask for the publish itself.
+  actions: write
+
+# One refresh at a time. A run already under way is left to finish, so two
+# builds never race to commit the same files.
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the demo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No key, and nothing to install: both collections are open data under
+      # the Open Government Licence and the build has no dependencies.
+      #
+      # It tops up rather than rebuilding. The waiting-list half is eighty-odd
+      # downloads of 3.5MB, each unzipping to 85MB, and a month NHS England has
+      # not reissued is the same month it was yesterday; `data/snapshot/
+      # sources.json` records the exact file each month came from, so only a
+      # month at a new address, and the three most recent, are read again.
+      - name: Build the snapshot from NHS England
+        run: |
+          if [ "${{ inputs.full }}" = "true" ]; then
+            node --max-old-space-size=4096 tools/build-snapshot.mjs --full
+          else
+            node --max-old-space-size=4096 tools/build-snapshot.mjs
+          fi
+
+      - name: Commit it, if anything changed
+        id: commit
+        run: |
+          if git diff --quiet -- data/snapshot; then
+            echo "The saved copy is unchanged."
+            echo 'committed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name 'nhs-refresh[bot]'
+          git config user.email 'nhs-refresh[bot]@users.noreply.github.com'
+          git add data/snapshot
+          git commit -m "Refresh the saved NHS England copy"
+          git push
+          echo 'committed=true' >> "$GITHUB_OUTPUT"
+
+      # A push made with GITHUB_TOKEN deliberately does not trigger other
+      # workflows -- that is GitHub's loop guard, not a setting -- so the commit
+      # above leaves the published page serving yesterday's copy until something
+      # asks for a publish. This is that ask, and it runs only when there was
+      # actually a commit to publish.
+      - name: Publish the new copy
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

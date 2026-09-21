@@ -63,6 +63,9 @@ const YEARS = ['2019-20', '2020-21', '2021-22', '2022-23', '2023-24', '2024-25',
     not changed, because a revision can be reissued under the same name. */
 const ALWAYS_REFETCH = 3;
 
+/** The code England's own figures travel under. It is never a provider. */
+const ENGLAND = 'ENG';
+
 /**
  * The waiting-time buckets the latest month's distribution is drawn in.
  *
@@ -749,6 +752,11 @@ async function main() {
   if (previous) {
     for (const row of previous.months) {
       if (row.tot == null && row.w18 == null) continue;
+      /* England's own row travels in the same file under the code ENG. It is
+         computed below from the providers, so carrying it over here would
+         hand the merge a second row for `ENG@month` and write the national
+         figures into the file twice. */
+      if (row.c === ENGLAND) continue;
       if (!carried.has(row.m)) carried.set(row.m, []);
       carried.get(row.m).push(row);
     }
@@ -870,7 +878,7 @@ async function main() {
       if (!has65) g65 = null;
     }
     englandRows.push({
-      id: `ENG@${month}`, kind: 'obs', c: 'ENG', m: month,
+      id: `${ENGLAND}@${month}`, kind: 'obs', c: ENGLAND, m: month,
       at: ae.at ?? null, a1: ae.a1 ?? null, o4: ae.o4 ?? null, o41: ae.o41 ?? null,
       w4: ae.w4 ?? null, w12: ae.w12 ?? null, ea: ae.ea ?? null,
       tot, w18, g52, g65, med: null,
@@ -997,6 +1005,20 @@ async function main() {
     await writeFile(join(out, name), text);
     return text.length;
   };
+  /*
+   * In provider order, and within a provider in date order.
+   *
+   * NHS England's yearly pages do not list their files chronologically -- the
+   * 2019-20 page starts at March 2020 and the reissued months are wherever they
+   * were reissued -- so the rows come out of the walk above in whatever order
+   * the links were in. A chart's line connects its points in the order it meets
+   * them, so a scrambled file draws a trust's eighty-nine months as a thicket
+   * of lines doubling back on themselves. Sorting here is what makes the file
+   * mean what it looks like it means; the page sorts its chart grids as well,
+   * because a live delta arrives whenever it arrives.
+   */
+  rows.sort((a, b) => (a.c === b.c ? (a.m < b.m ? -1 : a.m > b.m ? 1 : 0) : (a.c < b.c ? -1 : 1)));
+
   /*
    * The monthly rows are written as a header and an array of arrays rather than
    * as objects. Forty-five thousand rows of fourteen fields carry their own

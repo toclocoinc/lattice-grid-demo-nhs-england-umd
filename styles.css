@@ -1,0 +1,541 @@
+/* The page around the grid. The grid brings its own stylesheet. */
+
+:root {
+  --ink: #101828;
+  --ink-soft: #475467;
+  --line: #e4e7ec;
+  --page: #f7f8fa;
+  --panel: #ffffff;
+  --accent: #123a6b;
+  --live: #1b8a3f;
+  --alarm: #b42318;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font: 14px/1.5 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100vh;
+  padding: 16px 20px 12px;
+}
+
+/* The masthead */
+
+.head {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.head h1 {
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0 0 3px;
+}
+
+.lede {
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 88ch;
+}
+
+.head-note {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 10px;
+  /* The provenance line carries a whole sentence about where the data came
+     from and when. Left unbreakable it sets the width of the masthead, and on
+     a phone that one line pushed the whole page sideways. It wraps instead. */
+  min-width: 0;
+}
+
+.pill {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+.freshness {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.freshness.failed {
+  color: var(--alarm);
+  font-weight: 600;
+}
+
+/* The KPI strip */
+
+/* A row of tiles, each of which draws its own card. The strip itself is
+   layout only: two boxes each drawing a border, a background and a padding
+   read as a card inside a card, and the card is the tile. */
+.kpi-strip {
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/*
+ * The tiles' own card. The KPI module draws each tile with the grid theme's
+ * variables; naming the demo's panel colours here is what makes a tile a white
+ * card on this page's grey background, and a fixed minimum height is what
+ * stops a row of tiles stepping up and down as one of them loses its movement
+ * line.
+ */
+/*
+ * A stated height, not a minimum. A minimum makes a row of tiles as tall as the
+ * longest label in it, which means one series with a name a word longer than
+ * the rest leaves every tile beside it a pixel short -- and FRED's own titles
+ * are longer than the short ones in the curated list, so the row changed height
+ * the first time the snapshot was rebuilt with a key. A number here is a row of
+ * tiles that is the same height whatever is in it.
+ */
+.kpi-strip .lat-kpi__tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  height: 108px;
+  padding: 10px 12px;
+}
+
+/*
+ * A compact figure is short by construction, and the tiles are sized so it
+ * fits. Saying so here as well means a figure is never quietly replaced by an
+ * ellipsis if a locale renders one wider than expected.
+ */
+.kpi-strip .lat-kpi__value {
+  font-size: 1.35em;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/*
+ * A tile's label is one line for a level (the panel writes the movement line
+ * itself) and two for a rate, whose movement is in points and has to be said
+ * here. `pre-line` is what lets the second line be a second line.
+ */
+.kpi-strip .lat-kpi__label {
+  white-space: pre-line;
+}
+
+.kpi-host {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kpi-panel {
+  min-width: 0;
+}
+
+/* Charts */
+
+.chart-section {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/*
+ * Two charts across, each with a height of its own. A chart in a flex row with
+ * no stated height is a chart nought pixels tall, because there is nothing
+ * under it to push it open.
+ */
+.chart-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.chart-box.tall {
+  height: 340px;
+}
+
+.chart-note {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin: 0;
+}
+
+.empty-note {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 0;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 8px;
+  height: 460px;
+  overflow: hidden;
+  padding: 10px 12px 12px;
+}
+
+/* The chart's own grid is a data path, not a view: it is never mounted. */
+.hidden-grid {
+  display: none;
+}
+
+.chart-box {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.chart-error {
+  color: var(--alarm);
+  font-size: 12px;
+  padding: 10px;
+}
+
+/* The controls */
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.actions[hidden] {
+  display: none;
+}
+
+.actions-label {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+.action {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 11px;
+}
+
+.action:hover {
+  background: #eef2f7;
+  border-color: #c7d2e0;
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.action.toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Tabs and panes */
+
+/*
+ * The tabs module adds its own class to the element it is given and injects a
+ * stylesheet that sets `height: 100%` on it. That stylesheet arrives after this
+ * one, so a rule of equal weight here would lose; `#app` in front of the class
+ * is what gives this one the last word on how tall the strip is.
+ */
+/*
+ * A caption: one plain sentence under a panel's title saying what is in it.
+ */
+.panel-caption {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin: 0;
+}
+
+/*
+ * The two tab bodies.
+ *
+ * The tab module lays its panels out absolutely, so a child of one inherits no
+ * height at all. A grid put straight into a panel therefore grows to the height
+ * of every row it holds and the panel scrolls the whole table instead of the
+ * table scrolling its own rows: no scrollbar on the grid, no way to reach the
+ * month at the bottom, and a heading that leaves the screen. A stated height on
+ * the wrapper is what gives the grid a viewport to virtualise into.
+ */
+.monthly-tab,
+.treatment-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.monthly-tab .grid-pane {
+  flex: 1 1 auto;
+  min-height: 300px;
+}
+
+/*
+ * The month-by-month table's headings are trust names, and a trust name is
+ * longer than a fifth of a laptop screen. Everywhere else on the page a
+ * heading that will not fit is ellipsised, which is right for a label a reader
+ * already knows; here it is the thing that says which column is which, so it
+ * wraps to a second line instead. `headerHeight: 56` on that grid is what
+ * leaves room for the second line.
+ */
+.monthly-tab .col-head-main {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/*
+ * The drill-down: the twelve longest queues beside the table of every one of
+ * them. Two tracks on a desktop, one column on a phone (below).
+ */
+.treatment-split {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.treatment-split .grid-pane {
+  min-height: 260px;
+}
+
+.treatment-split .chart-box.tall {
+  height: auto;
+  min-height: 260px;
+}
+
+/*
+ * A two-line column heading: the name, and underneath it the thing a reader
+ * needs in order to read the numbers below -- the unit, and FRED's reference.
+ */
+.col-head {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.col-head-main {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-head-sub {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#app .tabs-host {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  height: 580px;
+  overflow: hidden;
+  padding: 10px 12px 12px;
+}
+
+/*
+ * The tabs module lays its panels out absolutely inside a relative container,
+ * which is how a hidden tab costs nothing. That makes each panel exactly as
+ * tall as the strip, so a panel whose content is taller than that scrolls
+ * inside itself rather than pushing the page sideways.
+ */
+.tabs-host .lat-tabs__panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.grid-pane {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Waiting and failure */
+
+.loading {
+  margin: auto;
+  max-width: 480px;
+  text-align: center;
+}
+
+.loading h1 {
+  color: var(--accent);
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.loading-message {
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+
+.loading-bar {
+  background: var(--line);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.loading-fill {
+  background: var(--accent);
+  height: 100%;
+  transition: width 0.2s ease;
+  width: 0;
+}
+
+/* The credit line */
+
+.foot {
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding-top: 10px;
+}
+
+.foot p {
+  margin: 0 0 2px;
+}
+
+.foot a {
+  color: var(--accent);
+}
+
+/* Said when the saved copy is standing in for data that could not be fetched. */
+.notice {
+  background: #fdf3e3;
+  border: 1px solid #f0d9a8;
+  border-radius: 7px;
+  color: #6b4d12;
+  margin: 8px 0 0;
+  padding: 6px 10px;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* One column on a phone                                               */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Below this width the page stops being a dashboard laid out across and
+ * becomes a single column read down. Every multi-column strip folds to one
+ * track, the charts get a height of their own instead of sharing a row's,
+ * and nothing is allowed to set a width the screen has to scroll to reach.
+ *
+ * The KPI panel sizes its own tracks from `--lat-kpi-tile-min`, which
+ * `columns: 4` sets as an inline style on the panel; `!important` is what
+ * lets a stylesheet have the last word over that inline value, so the four
+ * columns asked for on a desktop become one here rather than four tiles too
+ * narrow to read.
+ */
+@media (max-width: 640px) {
+  #app {
+    padding: 12px 12px 10px;
+  }
+
+  .head h1 {
+    font-size: 19px;
+  }
+
+  .chart-row,
+  .treatment-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chart-box.tall {
+    height: 260px;
+  }
+
+  .panel {
+    height: 420px;
+  }
+
+  #app .tabs-host {
+    height: 700px;
+  }
+
+  .treatment-split .chart-box.tall {
+    min-height: 240px;
+  }
+
+  /*
+   * The KPI panel sizes its own tracks from `--lat-kpi-tile-min`, which
+   * `columns: 6` sets as an inline style on the panel it draws into. That
+   * panel is `.kpi-strip` itself, because that is the element `createKPI` was
+   * given; `!important` is what lets a stylesheet have the last word over an
+   * inline value, so the six columns asked for on a desktop become one here
+   * rather than three tiles too narrow to read.
+   */
+  .kpi-strip.lat-kpi {
+    --lat-kpi-tile-min: 100% !important;
+  }
+
+  /*
+   * And a stated height goes with them. A tile's second line is a whole
+   * sentence about how the figure moved on the year, and at this width that
+   * sentence wraps; 108px cut it off mid-word.
+   */
+  .kpi-strip .lat-kpi__tile {
+    height: auto;
+    min-height: 92px;
+  }
+}
