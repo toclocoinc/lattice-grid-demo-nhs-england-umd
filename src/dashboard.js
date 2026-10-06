@@ -1133,6 +1133,12 @@
       'Every figure here is a figure NHS England published. Nothing on this page is modelled, except the '
       + 'median wait, which is estimated from the weekly waiting bands and is labelled as an estimate '
       + 'wherever it appears.'));
+    const builtWith = el('p', null, 'Built with ');
+    const gridLink = el('a', null, 'Lattice Grid');
+    gridLink.href = 'https://www.latticegrid.dev/statistics/';
+    builtWith.append(gridLink);
+    builtWith.append(document.createTextNode('.'));
+    footer.append(builtWith);
     host.append(footer);
 
     /* ---------------- keeping it all in step ---------------- */
