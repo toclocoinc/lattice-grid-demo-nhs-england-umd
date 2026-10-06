@@ -53,13 +53,13 @@ month before anything is committed.
 Six tags in `index.html`, and that is the whole of the library setup:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.66.0/lattice-grid.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.88.1/lattice-grid.min.css">
 
-<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.66.0/lattice-grid.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.66.0/modules/charts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.66.0/modules/data-router.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.66.0/modules/kpi.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.66.0/modules/tabs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.88.1/lattice-grid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.88.1/modules/charts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.88.1/modules/data-router.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.88.1/modules/kpi.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@toclocoinc/lattice-grid@1.88.1/modules/tabs.min.js"></script>
 ```
 
 Each file is the package's UMD build and leaves a global behind:
